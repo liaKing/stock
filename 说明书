@@ -1,0 +1,29 @@
+- biz 业务层
+	- dal 数据库层
+		- entity 表对象
+		- sql 建表语句
+	- handler 路由层，其中可以按照路由层级再分包
+	- model 请求响应对象层
+	- service 业务逻辑层
+	- middlerware 中间件层
+
+- idl idl 文件
+- thrift_gen 下游 idl 生成的远程调用代码
+
+- client 客户端生成的包，如和数据建立连接的 client，调用下游的 client，监控打点 client 等
+
+- conf 项目配置等包
+
+- constant 常量包
+- util 工具包
+
+- router.go 路由注册
+- main.go 项目运行入口
+
+- build.sh 项目编译脚本
+- output 项目编译后产出文件
+	- bootstrap.sh 项目启动脚本
+
+- go.mod 项目依赖
+	- go.sum
+- .gitignore 项目忽略跟踪文件

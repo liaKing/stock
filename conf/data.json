@@ -1,0 +1,13 @@
+{
+  "mysql": {
+    "username":"root",
+    "password":"3MZZM7Lh5zkwFKEG",
+    "ip":"8.130.125.131:3306",
+    "name":"interview"
+  },
+  "redis": {
+    "ip": "redis_service",
+    "maxIdle":     3,
+    "maxActive":   5
+  }
+}
