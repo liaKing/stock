@@ -31,3 +31,7 @@ type K2SLoginUser struct {
 	UserName string `json:"userName"` //用户名
 	PassWord string `json:"passWord"` // 密码
 }
+
+// S2KLoginUser 服务端到前端的协议 登录
+type S2KLoginUser struct {
+}
