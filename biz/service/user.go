@@ -8,6 +8,8 @@ import (
 	"stock/constant"
 	"stock/method"
 	"stock/util"
+	"strconv"
+	"time"
 )
 
 func UserLogin(c *gin.Context) {
@@ -81,4 +83,79 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser, ip string) (errCode u
 	}
 
 	return
+}
+
+func UserRegister(c *gin.Context) {
+	user := &model.K2SRegisterUser{}
+	err := c.ShouldBind(&user)
+	if err != nil {
+		log.Errorf(c, "UserRegister ShouldBind解析出错 err%d", err)
+		c.JSON(http.StatusOK, util.HttpCode{
+			Code: constant.ERRSHOULDBIND,
+			Data: struct{}{},
+		})
+		return
+	}
+
+	errCode := DoUserRegister(c, user)
+	if errCode.Code != constant.ERRSUCCER {
+		c.JSON(http.StatusOK, errCode)
+		return
+	}
+
+	c.JSON(http.StatusOK, errCode)
+}
+
+func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.HttpCode) {
+	if user.UserName == "" || user.PassWord == "" || user.RealName == "" {
+		log.Errorf(c, "DoUserRegister 关键信息丢失")
+		errCode = util.HttpCode{
+			Code: constant.ERRDATALOSE,
+			Data: struct{}{},
+		}
+		return errCode
+	}
+
+	errCode, mUser := method.DoFindMySQLUser(c, user.UserName)
+	if errCode.Code != constant.ERRSUCCER {
+		return errCode
+	}
+
+	if mUser.UserName != "" {
+		log.Errorf(c, "DoUserRegister 账号重复")
+		errCode = util.HttpCode{
+			Code: constant.ERRACCREPEAT,
+			Data: struct{}{},
+		}
+		return errCode
+	}
+
+	user.PassWord = util.HashPassword(user.PassWord)
+
+	snowflake, _ := util.NewSnowflake(1)
+	uuid := snowflake.Generate()
+
+	userNew := &model.User{
+		UserId:      strconv.FormatInt(uuid, 10),
+		Ctime:       time.Now().Unix(),
+		UserName:    user.UserName,
+		PassWord:    user.PassWord,
+		RealName:    user.RealName,
+		Name:        user.Name,
+		WeChat:      user.WeChat,
+		PhoneNumber: user.PhoneNumber,
+		Address:     user.Address,
+		Referrer:    user.Referrer,
+	}
+
+	errCode, userNew = method.DoCreateMySQLUser(c, userNew)
+	if errCode.Code != constant.ERRSUCCER {
+		return errCode
+	}
+
+	errCode = util.HttpCode{
+		Code: constant.ERRSUCCER,
+		Data: userNew,
+	}
+	return errCode
 }
