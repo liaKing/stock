@@ -10,10 +10,10 @@ import (
 )
 
 // DoFindMySQLUser 查找数据库用户
-func DoFindMySQLUser(c *gin.Context, account string) (errCode util.HttpCode, user *model.User) {
+func DoFindMySQLUser(c *gin.Context, UserName string) (errCode util.HttpCode, user *model.User) {
 	user = &model.User{}
-	query := "SELECT * FROM user WHERE account = ?"
-	err := config.MysqlConn.Raw(query, account).First(user).Error
+	query := "SELECT * FROM user WHERE UserName = ?"
+	err := config.MysqlConn.Raw(query, UserName).First(user).Error
 	if err != nil {
 		log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
 		errCode = util.HttpCode{
