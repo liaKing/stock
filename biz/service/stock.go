@@ -67,7 +67,7 @@ func SellStock(c *gin.Context) {
 }
 
 func GetStockList(c *gin.Context) {
-	errCode, existStock := method.DoGetStockListById(c, stock.StockId)
+	errCode := method.DoGetStockListById(c)
 	if errCode.Code != 0 {
 		c.JSON(http.StatusOK, util.HttpCode{
 			Code: errCode.Code,
@@ -75,4 +75,8 @@ func GetStockList(c *gin.Context) {
 		})
 		return
 	}
+}
+
+func GetStockByUserId(c *gin.Context) {
+	errCode := method.GetStockByUserId()
 }

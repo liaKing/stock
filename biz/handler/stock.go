@@ -8,5 +8,6 @@ import (
 func StockRouter(r *gin.RouterGroup) {
 	r.POST("/buy", service.BuyStock)
 	r.POST("/sell", service.SellStock)
-	r.POST("/stockList", service.GetStockList)
+	r.GET("/stockList", service.GetStockList)
+	r.GET("/user", service.GetStockByUserId)
 }

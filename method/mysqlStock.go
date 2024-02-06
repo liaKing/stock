@@ -131,7 +131,7 @@ func DoSellStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SSto
 	return
 }
 
-func DoGetStockListById() (errCode util.HttpCode) {
+func DoGetStockListById(c *gin.Context) (errCode util.HttpCode) {
 	pageNumber := 1
 	stock := make([]*model.K2SStock, 0)
 	pageSize := 10 //每页显示的数据条数。
@@ -166,4 +166,8 @@ func DoGetStockListById() (errCode util.HttpCode) {
 		Data: stock,
 	}
 	return
+}
+
+func GetStockByUserId() {
+
 }
