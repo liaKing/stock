@@ -2,8 +2,10 @@ package constant
 
 const (
 
-	//关于用户是1开头
-	//关于股票是2开头
+	// 关于用户是1开头User
+	//关于股票是2开头Stock
+	//StockNotFind = 201
+
 	ERRSUCCER         = iota //成功统一返回成功
 	ERRSHOULDBIND            //ShouldBind解析出错
 	ERRDATALOSE              //关键信息丢失

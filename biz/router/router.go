@@ -12,5 +12,17 @@ func Router() *gin.Engine {
 	{
 		handler.UserRouter(user)
 	}
+	stock := r.Group("stock")
+	{
+		handler.StockRouter(stock)
+	}
+	task := r.Group("task")
+	{
+		handler.TaskRouter(task)
+	}
+	tradeTask := r.Group("tradeTask")
+	{
+		handler.TaskRouter(tradeTask)
+	}
 	return r
 }
