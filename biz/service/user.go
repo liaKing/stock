@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/appengine/log"
 	"net/http"
+	config "stock/biz/dal/sql"
 	"stock/biz/model"
 	"stock/constant"
 	"stock/method"
@@ -156,6 +157,71 @@ func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.H
 	errCode = util.HttpCode{
 		Code: constant.ERRSUCCER,
 		Data: userNew,
+	}
+	return errCode
+}
+
+func UserDel(c *gin.Context) {
+	user := &model.K2SDelUser{}
+	err := c.ShouldBind(&user)
+	if err != nil {
+		log.Errorf(c, "UserDel ShouldBind解析出错 err%d", err)
+		c.JSON(http.StatusOK, util.HttpCode{
+			Code: constant.ERRSHOULDBIND,
+			Data: struct{}{},
+		})
+		return
+	}
+
+	errCode := DoUserLogin(c, user, c.ClientIP())
+	if errCode.Code != constant.ERRSUCCER {
+		c.JSON(http.StatusOK, errCode)
+		return
+	}
+
+	c.JSON(http.StatusOK, errCode)
+}
+
+func DoUserDel(c *gin.Context, user *model.K2SDelUser) (errCode util.HttpCode) {
+	if user.UserId == "" || user.DeletionReason == "" {
+		log.Errorf(c, "DoUserDel 关键信息丢失")
+		errCode = util.HttpCode{
+			Code: constant.ERRDATALOSE,
+			Data: struct{}{},
+		}
+		return errCode
+	}
+
+	errCode, mUser := method.DoFindMySQLUser(c, user.UserId)
+	if errCode.Code != constant.ERRSUCCER {
+		return errCode
+	}
+
+	if mUser.UserName == "" {
+		log.Errorf(c, "DoUserDel 用户不存在")
+		errCode = util.HttpCode{
+			Code: constant.ERRISNOTEXIT,
+			Data: struct{}{},
+		}
+		return errCode
+	}
+
+	//开启一个事务
+	tx := config.MysqlConn.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	errCode, userNew = method.DoCreateMySQLUser(c, mUser)
+	if errCode.Code != constant.ERRSUCCER {
+		return errCode
+	}
+
+	errCode = util.HttpCode{
+		Code: constant.ERRSUCCER,
+		Data: struct{}{},
 	}
 	return errCode
 }
