@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/gin-gonic/gin"
-	"google.golang.org/appengine/log"
+	//"google.golang.org/appengine/log"
 	"net/http"
 	config "stock/biz/dal/sql"
 	"stock/biz/model"
@@ -17,7 +17,7 @@ func UserLogin(c *gin.Context) {
 	user := &model.K2SLoginUser{}
 	err := c.ShouldBind(&user)
 	if err != nil {
-		log.Errorf(c, "UserLogin ShouldBind解析出错 err%d", err)
+		//log.Errorf(c, "UserLogin ShouldBind解析出错 err%d", err)
 		c.JSON(http.StatusOK, util.HttpCode{
 			Code: constant.ERRSHOULDBIND,
 			Data: struct{}{},
@@ -36,7 +36,7 @@ func UserLogin(c *gin.Context) {
 
 func DoUserLogin(c *gin.Context, user *model.K2SLoginUser, ip string) (errCode util.HttpCode) {
 	if user.UserName == "" || user.PassWord == "" {
-		log.Errorf(c, "DoUserLogin 关键信息丢失")
+		//log.Errorf(c, "DoUserLogin 关键信息丢失")
 		errCode = util.HttpCode{
 			Code: constant.ERRDATALOSE,
 			Data: struct{}{},
@@ -51,7 +51,6 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser, ip string) (errCode u
 	hashPassword := util.HashPassword(user.PassWord)
 
 	if hashPassword != mUser.PassWord {
-		log.Errorf(c, "DoUserLogin 密码不正确")
 		errCode = util.HttpCode{
 			Code: constant.ERRPSWNOTCORRECT,
 			Data: struct{}{},
@@ -69,7 +68,6 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser, ip string) (errCode u
 
 	err := util.SetSession(c, mUser.UserName, mUser.UserId, c.ClientIP())
 	if err != nil {
-		log.Errorf(c, "DoUserLogin SetSession session生成失败 err%d", err)
 		errCode = util.HttpCode{
 			Code: constant.ERRCREATEESSION,
 			Data: struct{}{},
