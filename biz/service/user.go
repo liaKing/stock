@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/gin-gonic/gin"
-	//"google.golang.org/appengine/log"
+	"google.golang.org/appengine/log"
 	"net/http"
 	"stock/biz/model"
 	"stock/constant"

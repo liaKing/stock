@@ -11,7 +11,8 @@ type User struct {
 	WeChat      string `json:"weChat"`      //微信号
 	PhoneNumber string `json:"phoneNumber"` //手机号
 	Address     string `json:"address"`     //家庭住址
-	Referrer    string `json:"referrer"`    //推荐人
+	Luck        uint64 `json:"luck" db:"luck"`
+	Referrer    string `json:"referrer"` //推荐人
 }
 
 // K2SRegisterUser 前端到服务端的协议 注册

@@ -55,3 +55,19 @@ func DoCreateMySQLUser(c *gin.Context, user *model.User) (errCode util.HttpCode,
 	}
 	return
 }
+
+//通过id获取用户信息
+
+func GetUserById(c *gin.Context, id string) (errCode util.HttpCode, user *model.User) {
+	user = &model.User{}
+	query := "SELECT * FROM user WHERE user_id= ?"
+	err := config.MysqlConn.Raw(query, id).First(user).Error
+	if err != nil {
+		errCode = util.HttpCode{
+			Code: constant.ERRDOMYSQL,
+			Data: struct{}{},
+		}
+		return
+	}
+	return
+}
