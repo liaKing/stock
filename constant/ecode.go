@@ -20,4 +20,5 @@ const (
 	ERRSENTEMAIL             //邮箱发送失败
 	ERRPSWNOTCORRECT         //密码不正确
 	ERRCREATEESSION          //session生成失败
+	ERRISNOTEXIT             //用户不存在
 )

@@ -36,3 +36,9 @@ type K2SLoginUser struct {
 // S2KLoginUser 服务端到前端的协议 登录
 type S2KLoginUser struct {
 }
+
+// K2SDelUser 前端到服务端的协议 删除
+type K2SDelUser struct {
+	UserId         string `json:"userId"`         //用户Id
+	DeletionReason string `json:"deletionReason"` // 删除理由
+}
