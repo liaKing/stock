@@ -3,6 +3,7 @@ package method
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"sync"
 	"time"
 
@@ -186,4 +187,55 @@ func GetStockByUserId(c *gin.Context, userId string) (errCode util.HttpCode) {
 	}
 	return
 
+}
+
+func CommitStockAct(c *gin.Context, commit *model.K2SCommitStock) (errCode util.HttpCode) {
+	var rateLock sync.Mutex
+	rateLock.Lock()
+	defer rateLock.Unlock()
+	tx := config.MysqlConn.Begin()
+	//事务里的代码
+
+	price := commit.Number / 5
+	errCode = addStockPrice(c, price, tx)
+	if errCode.Code != constant.ErrSuccer {
+		return
+	}
+	for _, val := range commit.Stock {
+		query := "UPDATE user SET stock_price = seock_price-? WHERE user_id = ?"
+		err := tx.Raw(query, val.DecreaseLuck, "001")
+		if err != nil {
+			log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+			errCode = util.HttpCode{
+				Code: constant.ERRDOMYSQL,
+				Data: struct{}{},
+			}
+			return
+		}
+	}
+
+	tx.Exec("commit")
+	errCode = util.HttpCode{
+		Code: constant.ERRSUCCER,
+		Data: struct{}{},
+	}
+	return
+}
+
+func addStockPrice(c *gin.Context, price uint64, tx *gorm.DB) (errCode util.HttpCode) {
+	query := "UPDATE user SET stock_price = seock_price+? WHERE user_id = ?"
+	err := tx.Raw(query, price, "001")
+	if err != nil {
+		log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+		errCode = util.HttpCode{
+			Code: constant.ERRDOMYSQL,
+			Data: struct{}{},
+		}
+		return
+	}
+	errCode = util.HttpCode{
+		Code: constant.ERRSUCCER,
+		Data: struct{}{},
+	}
+	return
 }
