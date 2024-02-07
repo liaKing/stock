@@ -104,4 +104,11 @@ func CommitStockAct(c *gin.Context) {
 		})
 	}
 	errCode := method.CommitStockAct(c, commitStock)
+	if errCode.Code != constant.ErrSuccer {
+		c.JSON(http.StatusOK, errCode)
+		return
+	}
+	//这里应该将redis中设置允许用户进行股票交易
+	c.JSON(http.StatusOK, errCode)
+	return
 }
