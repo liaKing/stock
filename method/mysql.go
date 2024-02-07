@@ -69,6 +69,10 @@ func GetUserById(c *gin.Context, id string) (errCode util.HttpCode, user *model.
 		}
 		return
 	}
+	errCode = util.HttpCode{
+		Code: constant.ErrSuccer,
+		Data: struct{}{},
+	}
 	return
 }
 
@@ -85,7 +89,7 @@ func DoUpdataMySQLUser(c *gin.Context, userId string, deletionReason string) (er
 		return
 	}
 	errCode = util.HttpCode{
-		Code: constant.ERRSUCCER,
+		Code: constant.ErrSuccer,
 		Data: struct{}{},
 	}
 

@@ -1,9 +1,9 @@
 {
   "mysql": {
     "username":"root",
-    "password":"3MZZM7Lh5zkwFKEG",
-    "ip":"8.130.125.131:3306",
-    "name":"interview"
+    "password":"root",
+    "ip":"127.0.0.1:3306",
+    "name":"stock"
   },
   "redis": {
     "ip": "redis_service",
