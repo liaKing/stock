@@ -71,3 +71,23 @@ func GetUserById(c *gin.Context, id string) (errCode util.HttpCode, user *model.
 	}
 	return
 }
+
+// DoUpdataMySQLUser 修改数据库用户
+func DoUpdataMySQLUser(c *gin.Context, userId string, deletionReason string) (errCode util.HttpCode) {
+	query := "update user set delFlg =? and deletionReason = ? where userId = ?"
+	err := config.MysqlConn.Exec(query, 1, deletionReason, userId).Error
+	if err != nil {
+		log.Errorf(c, "DoUpdataMySQLUser 操作mysql失败 err%d", err)
+		errCode = util.HttpCode{
+			Code: constant.ERRDOMYSQL,
+			Data: struct{}{},
+		}
+		return
+	}
+	errCode = util.HttpCode{
+		Code: constant.ERRSUCCER,
+		Data: struct{}{},
+	}
+
+	return
+}

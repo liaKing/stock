@@ -13,9 +13,7 @@ func AuthCheck() gin.HandlerFunc {
 		data := util.GetSession(c)
 		userId, _ := data["userId"]
 		userName, _ := data["userName"]
-		ip, _ := data["ip.json"]
 		accountString, _ := userName.(string)
-		ipString, _ := ip.(string)
 		// 从 Redis 中获取存储的验证码
 		key := constant.REDIS_KEY_SESSION + accountString
 		errCode, session := method.DoGetRedisValue(key)
@@ -25,16 +23,14 @@ func AuthCheck() gin.HandlerFunc {
 		}
 		val := session.(string)
 		uidString := userId.(string)
-		dataString := uidString + "_" + ipString
 
-		if dataString != val {
+		if uidString != val {
 			c.Redirect(http.StatusFound, "/login")
 			c.Abort() //如果用户没有登录，中间件直接返回，不再向后继续
 		}
 
 		c.Set("account", accountString)
 		c.Set("id", uidString)
-		c.Set("ip.json", ipString)
 		c.Next()
 	}
 }

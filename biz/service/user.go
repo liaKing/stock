@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/appengine/log"
 	"net/http"
-	config "stock/biz/dal/sql"
 	"stock/biz/model"
 	"stock/constant"
 	"stock/method"
@@ -17,7 +16,7 @@ func UserLogin(c *gin.Context) {
 	user := &model.K2SLoginUser{}
 	err := c.ShouldBind(&user)
 	if err != nil {
-		//log.Errorf(c, "UserLogin ShouldBind解析出错 err%d", err)
+		log.Errorf(c, "UserLogin ShouldBind解析出错 err%d", err)
 		c.JSON(http.StatusOK, util.HttpCode{
 			Code: constant.ERRSHOULDBIND,
 			Data: struct{}{},
@@ -25,7 +24,7 @@ func UserLogin(c *gin.Context) {
 		return
 	}
 
-	errCode := DoUserLogin(c, user, c.ClientIP())
+	errCode := DoUserLogin(c, user)
 	if errCode.Code != constant.ERRSUCCER {
 		c.JSON(http.StatusOK, errCode)
 		return
@@ -34,9 +33,9 @@ func UserLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, errCode)
 }
 
-func DoUserLogin(c *gin.Context, user *model.K2SLoginUser, ip string) (errCode util.HttpCode) {
+func DoUserLogin(c *gin.Context, user *model.K2SLoginUser) (errCode util.HttpCode) {
 	if user.UserName == "" || user.PassWord == "" {
-		//log.Errorf(c, "DoUserLogin 关键信息丢失")
+		log.Errorf(c, "DoUserLogin 关键信息丢失")
 		errCode = util.HttpCode{
 			Code: constant.ERRDATALOSE,
 			Data: struct{}{},
@@ -50,7 +49,17 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser, ip string) (errCode u
 	}
 	hashPassword := util.HashPassword(user.PassWord)
 
+	if mUser.DelFlg != 0 {
+		log.Errorf(c, "DoUserLogin 用户已经注销")
+		errCode = util.HttpCode{
+			Code: constant.ERRSIGNOUT,
+			Data: struct{}{},
+		}
+		return
+	}
+
 	if hashPassword != mUser.PassWord {
+		log.Errorf(c, "DoUserLogin 密码不正确")
 		errCode = util.HttpCode{
 			Code: constant.ERRPSWNOTCORRECT,
 			Data: struct{}{},
@@ -60,13 +69,13 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser, ip string) (errCode u
 
 	key := constant.REDIS_KEY_SESSION + user.UserName
 
-	val := mUser.UserId + "_" + ip
+	val := mUser.UserId
 	errCode = method.DoSetRedisValue(key, val, 5*60)
 	if errCode.Code != constant.ERRSUCCER {
 		return
 	}
 
-	err := util.SetSession(c, mUser.UserName, mUser.UserId, c.ClientIP())
+	err := util.SetSession(c, mUser.UserName, mUser.UserId)
 	if err != nil {
 		errCode = util.HttpCode{
 			Code: constant.ERRCREATEESSION,
@@ -135,16 +144,18 @@ func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.H
 	uuid := snowflake.Generate()
 
 	userNew := &model.User{
-		UserId:      strconv.FormatInt(uuid, 10),
-		Ctime:       time.Now().Unix(),
-		UserName:    user.UserName,
-		PassWord:    user.PassWord,
-		RealName:    user.RealName,
-		Name:        user.Name,
-		WeChat:      user.WeChat,
-		PhoneNumber: user.PhoneNumber,
-		Address:     user.Address,
-		Referrer:    user.Referrer,
+		UserId:         strconv.FormatInt(uuid, 10),
+		Ctime:          time.Now().Unix(),
+		DelFlg:         0,
+		DeletionReason: "",
+		UserName:       user.UserName,
+		PassWord:       user.PassWord,
+		RealName:       user.RealName,
+		Name:           user.Name,
+		WeChat:         user.WeChat,
+		PhoneNumber:    user.PhoneNumber,
+		Address:        user.Address,
+		Referrer:       user.Referrer,
 	}
 
 	errCode, userNew = method.DoCreateMySQLUser(c, userNew)
@@ -154,7 +165,7 @@ func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.H
 
 	errCode = util.HttpCode{
 		Code: constant.ERRSUCCER,
-		Data: userNew,
+		Data: struct{}{},
 	}
 	return errCode
 }
@@ -171,7 +182,7 @@ func UserDel(c *gin.Context) {
 		return
 	}
 
-	errCode := DoUserLogin(c, user, c.ClientIP())
+	errCode := DoUserDel(c, user)
 	if errCode.Code != constant.ERRSUCCER {
 		c.JSON(http.StatusOK, errCode)
 		return
@@ -181,7 +192,7 @@ func UserDel(c *gin.Context) {
 }
 
 func DoUserDel(c *gin.Context, user *model.K2SDelUser) (errCode util.HttpCode) {
-	if user.UserId == "" || user.DeletionReason == "" {
+	if user.UserId == "" {
 		log.Errorf(c, "DoUserDel 关键信息丢失")
 		errCode = util.HttpCode{
 			Code: constant.ERRDATALOSE,
@@ -204,15 +215,7 @@ func DoUserDel(c *gin.Context, user *model.K2SDelUser) (errCode util.HttpCode) {
 		return errCode
 	}
 
-	//开启一个事务
-	tx := config.MysqlConn.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	errCode, userNew = method.DoCreateMySQLUser(c, mUser)
+	errCode = method.DoUpdataMySQLUser(c, user.UserId, user.DeletionReason)
 	if errCode.Code != constant.ERRSUCCER {
 		return errCode
 	}
@@ -222,4 +225,45 @@ func DoUserDel(c *gin.Context, user *model.K2SDelUser) (errCode util.HttpCode) {
 		Data: struct{}{},
 	}
 	return errCode
+}
+
+func UserGet(c *gin.Context) {
+	user := &model.K2SGetUser{}
+	err := c.ShouldBind(&user)
+	if err != nil {
+		log.Errorf(c, "UserDel ShouldBind解析出错 err%d", err)
+		c.JSON(http.StatusOK, util.HttpCode{
+			Code: constant.ERRSHOULDBIND,
+			Data: struct{}{},
+		})
+		return
+	}
+
+	errCode := DoUserGet(c, user)
+	if errCode.Code != constant.ERRSUCCER {
+		c.JSON(http.StatusOK, errCode)
+		return
+	}
+
+	c.JSON(http.StatusOK, errCode)
+}
+
+func DoUserGet(c *gin.Context, user *model.K2SGetUser) (errCode util.HttpCode) {
+	if user.UserId == "" {
+		log.Errorf(c, "DoUserDel 关键信息丢失")
+		errCode = util.HttpCode{
+			Code: constant.ERRDATALOSE,
+			Data: struct{}{},
+		}
+		return errCode
+	}
+	errCode, mUser := method.GetUserById(c, user.UserId)
+	if errCode.Code != constant.ERRSUCCER {
+		return errCode
+	}
+	errCode = util.HttpCode{
+		Code: constant.ERRSUCCER,
+		Data: mUser,
+	}
+	return
 }

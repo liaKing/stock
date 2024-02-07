@@ -7,4 +7,7 @@ import (
 
 func UserRouter(r *gin.RouterGroup) {
 	r.POST("/login", service.UserLogin)
+	r.POST("/register", service.UserRegister)
+	r.POST("/del", service.UserDel)
+	r.POST("/get", service.UserGet)
 }

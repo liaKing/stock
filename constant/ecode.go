@@ -21,4 +21,5 @@ const (
 	ERRPSWNOTCORRECT         //密码不正确
 	ERRCREATEESSION          //session生成失败
 	ERRISNOTEXIT             //用户不存在
+	ERRSIGNOUT               //用户已经注销
 )
