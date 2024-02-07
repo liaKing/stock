@@ -91,6 +91,11 @@ func GetStockByUserId(c *gin.Context) {
 	c.JSON(http.StatusOK, errCode)
 }
 func StopStockAct(c *gin.Context) {
+	key := "tradeIf"
+
+	val := "1"
+	errCode := method.DoSetRedisValue(key, val, 0)
+	c.JSON(http.StatusOK, errCode)
 
 }
 
@@ -109,6 +114,11 @@ func CommitStockAct(c *gin.Context) {
 		return
 	}
 	//这里应该将redis中设置允许用户进行股票交易
+	key := "tradeIf"
+
+	val := "0"
+	errCode = method.DoSetRedisValue(key, val, 0)
 	c.JSON(http.StatusOK, errCode)
+
 	return
 }
