@@ -94,7 +94,7 @@ func StopStockAct(c *gin.Context) {
 	key := "tradeIf"
 
 	val := "1"
-	errCode := method.DoSetRedisValue(key, val, 0)
+	errCode := method.DoSetRedisValue(c, key, val, 0)
 	c.JSON(http.StatusOK, errCode)
 
 }
@@ -117,7 +117,7 @@ func CommitStockAct(c *gin.Context) {
 	key := "tradeIf"
 
 	val := "0"
-	errCode = method.DoSetRedisValue(key, val, 0)
+	errCode = method.DoSetRedisValue(c, key, val, 0)
 	c.JSON(http.StatusOK, errCode)
 
 	return
