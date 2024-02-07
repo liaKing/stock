@@ -16,7 +16,7 @@ func AuthCheck() gin.HandlerFunc {
 		accountString, _ := userName.(string)
 		// 从 Redis 中获取存储的验证码
 		key := constant.REDIS_KEY_SESSION + accountString
-		errCode, session := method.DoGetRedisValue(key)
+		errCode, session := method.DoGetRedisValue(c, key)
 		if errCode.Code != constant.ERRSUCCER {
 			c.JSON(http.StatusOK, errCode)
 			return

@@ -70,7 +70,7 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser) (errCode util.HttpCod
 	key := constant.REDIS_KEY_SESSION + user.UserName
 
 	val := mUser.UserId
-	errCode = method.DoSetRedisValue(key, val, 5*60)
+	errCode = method.DoSetRedisValue(c, key, val, 5*60)
 	if errCode.Code != constant.ERRSUCCER {
 		return
 	}
