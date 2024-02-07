@@ -22,7 +22,7 @@ func Router() *gin.Engine {
 	}
 	tradeTask := r.Group("tradeTask")
 	{
-		handler.TaskRouter(tradeTask)
+		handler.TradeTaskRouter(tradeTask)
 	}
 	return r
 }

@@ -5,6 +5,7 @@ import (
 	"stock/biz/service"
 )
 
-func TradeRouter(r *gin.RouterGroup) {
-	r.POST("/stockList", service.UserLogin)
+func TradeTaskRouter(r *gin.RouterGroup) {
+	r.POST("/stockList", service.GetTradeTaskListByUserId)
+
 }

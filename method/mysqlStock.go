@@ -168,6 +168,22 @@ func DoGetStockListById(c *gin.Context) (errCode util.HttpCode) {
 	return
 }
 
-func GetStockByUserId() {
+func GetStockByUserId(c *gin.Context, userId string) (errCode util.HttpCode) {
+	stock := &model.K2SStock{}
+	query := "SELECT * FROM stock WHERE user_id = ?"
+	err := config.MysqlConn.Raw(query, userId).First(stock).Error
+	if err != nil {
+		log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+		errCode = util.HttpCode{
+			Code: constant.ERRDOMYSQL,
+			Data: struct{}{},
+		}
+		return
+	}
+	errCode = util.HttpCode{
+		Code: constant.ERRSUCCER,
+		Data: struct{}{},
+	}
+	return
 
 }

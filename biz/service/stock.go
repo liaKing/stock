@@ -78,5 +78,15 @@ func GetStockList(c *gin.Context) {
 }
 
 func GetStockByUserId(c *gin.Context) {
-	errCode := method.GetStockByUserId()
+	userId := "111"
+	errCode := method.GetStockByUserId(c, userId)
+	if errCode.Code == constant.ErrSuccer {
+		errCode = util.HttpCode{
+			Code: constant.ERRDOMYSQL,
+			Data: struct{}{},
+		}
+		c.JSON(http.StatusOK, errCode)
+		return
+	}
+	c.JSON(http.StatusOK, errCode)
 }
