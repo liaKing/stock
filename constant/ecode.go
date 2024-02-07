@@ -3,13 +3,18 @@ package constant
 const (
 	//success
 	ErrSuccer = iota
+
 	// 关于用户是1开头User
 	LackOfLuck = 101
+
 	//关于股票是2开头Stock
 	//StockNotFind = 201
 	StockOverBuying = 202 //股票数量已不够
-	//数据库方面问题9开头
-	DatabaseError     = 901
+
+	//common
+	DatabaseError  = 901
+	ParameterError = 902
+
 	ERRSUCCER         = iota //成功统一返回成功
 	ERRSHOULDBIND            //ShouldBind解析出错
 	ERRDATALOSE              //关键信息丢失

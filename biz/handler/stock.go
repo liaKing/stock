@@ -10,4 +10,7 @@ func StockRouter(r *gin.RouterGroup) {
 	r.POST("/sell", service.SellStock)
 	r.GET("/stockList", service.GetStockList)
 	r.GET("/user", service.GetStockByUserId)
+	r.PUT("/stop", service.StopStockAct)
+	r.PUT("/commit", service.CommitStockAct)
+
 }
