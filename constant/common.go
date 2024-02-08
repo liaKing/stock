@@ -6,3 +6,5 @@ const (
 	SessionEncipher = "wangzhiqian"
 	SessionName     = "my_session"
 )
+
+const AdministratorUserId = "001"

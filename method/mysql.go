@@ -95,3 +95,23 @@ func DoUpdataMySQLUser(c *gin.Context, userId string, deletionReason string) (er
 
 	return
 }
+
+// DoUpdataMySQLUserLuck 修改数据库用户幸运值
+func DoUpdataMySQLUserLuck(c *gin.Context, userId string, luck uint64) (errCode util.HttpCode) {
+	query := "update user set luck = ? where userId = ?"
+	err := config.MysqlConn.Exec(query, luck, userId).Error
+	if err != nil {
+		log.Errorf(c, "DoUpdataMySQLUserLuck 操作mysql失败 err%d", err)
+		errCode = util.HttpCode{
+			Code: constant.ERRDOMYSQL,
+			Data: struct{}{},
+		}
+		return
+	}
+	errCode = util.HttpCode{
+		Code: constant.ErrSuccer,
+		Data: struct{}{},
+	}
+
+	return
+}

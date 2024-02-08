@@ -156,6 +156,7 @@ func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.H
 		WeChat:         user.WeChat,
 		PhoneNumber:    user.PhoneNumber,
 		Address:        user.Address,
+		Luck:           0,
 		Referrer:       user.Referrer,
 	}
 
@@ -262,6 +263,55 @@ func DoUserGet(c *gin.Context, user *model.K2SGetUser) (errCode util.HttpCode) {
 	if errCode.Code != constant.ERRSUCCER {
 		return errCode
 	}
+	errCode = util.HttpCode{
+		Code: constant.ERRSUCCER,
+		Data: mUser,
+	}
+	return
+}
+
+func UserDoLuck(c *gin.Context) {
+	user := &model.K2SDoLuckUser{}
+	err := c.ShouldBind(&user)
+	if err != nil {
+		log.Errorf(c, "UserDel ShouldBind解析出错 err%d", err)
+		c.JSON(http.StatusOK, util.HttpCode{
+			Code: constant.ERRSHOULDBIND,
+			Data: struct{}{},
+		})
+		return
+	}
+
+	errCode := DoUserLuck(c, user)
+	if errCode.Code != constant.ERRSUCCER {
+		c.JSON(http.StatusOK, errCode)
+		return
+	}
+
+	c.JSON(http.StatusOK, errCode)
+}
+
+func DoUserLuck(c *gin.Context, user *model.K2SDoLuckUser) (errCode util.HttpCode) {
+	if user.UserId == "" || user.Luck == 0 {
+		log.Errorf(c, "DoUserLuck 关键信息丢失")
+		errCode = util.HttpCode{
+			Code: constant.ERRDATALOSE,
+			Data: struct{}{},
+		}
+		return errCode
+	}
+	errCode, mUser := method.GetUserById(c, user.UserId)
+	if errCode.Code != constant.ERRSUCCER {
+		return errCode
+	}
+
+	mUser.Luck += user.Luck
+
+	errCode = method.DoUpdataMySQLUserLuck(c, user.UserId, mUser.Luck)
+	if errCode.Code != constant.ERRSUCCER {
+		return errCode
+	}
+
 	errCode = util.HttpCode{
 		Code: constant.ERRSUCCER,
 		Data: mUser,

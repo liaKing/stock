@@ -12,8 +12,8 @@ type User struct {
 	WeChat         string `json:"weChat" db:"we_chat"`                 //微信号
 	PhoneNumber    string `json:"phoneNumber" db:"phone_number"`       //手机号
 	Address        string `json:"address" db:"address"`                //家庭住址
-	Luck           uint64 `json:"luck" db:"luck"`
-	Referrer       string `json:"referrer" db:"referrer"` //推荐人
+	Luck           uint64 `json:"luck" db:"luck"`                      //货币
+	Referrer       string `json:"referrer" db:"referrer"`              //推荐人
 }
 
 // K2SRegisterUser 前端到服务端的协议 注册
@@ -47,4 +47,10 @@ type K2SDelUser struct {
 // K2SGetUser 前端到服务端的协议 获取用户信息
 type K2SGetUser struct {
 	UserId string `json:"userId"` //用户Id
+}
+
+// K2SDoLuckUser 前端到服务端的协议 修改货币
+type K2SDoLuckUser struct {
+	UserId string `json:"userId"` //用户Id
+	Luck   uint64 `json:"luck" db:"luck"`
 }

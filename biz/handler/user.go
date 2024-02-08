@@ -2,12 +2,21 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	middlewares "stock/biz/middlerware"
 	"stock/biz/service"
 )
 
 func UserRouter(r *gin.RouterGroup) {
-	r.PUT("/login", service.UserLogin)
-	r.PUT("/register", service.UserRegister)
-	r.PUT("/del", service.UserDel)
-	r.GET("/get", service.UserGet)
+
+	r.POST("/login", service.UserLogin)
+	r.POST("/get", service.UserGet)
+
+	admin := r.Group("admin")
+	admin.Use(middlewares.AdminCheck())
+	{
+		admin.POST("/del", service.UserDel)
+		admin.POST("/register", service.UserRegister)
+		admin.POST("/doluck", service.UserDoLuck)
+	}
+
 }
