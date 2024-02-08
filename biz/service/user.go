@@ -90,6 +90,7 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser) (errCode util.HttpCod
 		Data: struct{}{},
 	}
 
+	c.JSON(http.StatusOK, errCode)
 	return
 }
 
