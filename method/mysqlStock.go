@@ -103,6 +103,38 @@ func DoBuyStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SStoc
 		}
 		return
 	}
+
+	stockUser := &model.StockUser{}
+	query = "SELECT * FROM stock_user WHERE user_id= ? and stock_id = ?"
+	err = config.MysqlConn.Raw(query, user.UserId, stock.StockId).First(stockUser).Error
+	if stockUser == nil {
+		snowflake, _ := util.NewSnowflake(1)
+		uuid := snowflake.Generate()
+
+		sql = "insert into stock_user (`stock_user_id`, `stock_id`, `stock_name`, `stock_number`, `user_id`) values(?,?,?,?,?)"
+
+		err = tx.Exec(sql, uuid, stock.StockId, stock.StockName, stock.StockNumber, userId).Error
+		if err != nil {
+			log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+			errCode = util.HttpCode{
+				Code: constant.DatabaseError,
+				Data: struct{}{},
+			}
+			return
+		}
+	} else {
+		query := "UPDATE stock_user SET stock_number = ? WHERE user_id = ? and stock_id = ?"
+		err := tx.Exec(query, stockNumber, user.UserId, stock.StockId).Error
+		if err != nil {
+			log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+			errCode = util.HttpCode{
+				Code: constant.DatabaseError,
+				Data: struct{}{},
+			}
+			return
+		}
+	}
+
 	tx.Exec("commit")
 	errCode = util.HttpCode{
 		Code: constant.ErrSuccer,
@@ -123,12 +155,12 @@ func DoSellStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SSto
 	defer rateLock.Unlock()
 	tx := config.MysqlConn.Begin()
 	//事务里的代码
-	stock.StockNumber = existStock.StockNumber + stock.StockNumber
+	stockNumber := existStock.StockNumber + stock.StockNumber
 
-	stock.TotalValue = user.Luck + stock.TotalValue
+	user.Luck = user.Luck + stock.TotalValue
 
 	query := "UPDATE stock SET stock_number = ? WHERE stock_id = ?"
-	err := tx.Exec(query, stock.StockNumber, stock.StockId).Error
+	err := tx.Exec(query, stockNumber, stock.StockId).Error
 	if err != nil {
 		errCode = util.HttpCode{
 			Code: constant.DatabaseError,
@@ -137,7 +169,7 @@ func DoSellStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SSto
 		return
 	}
 	query = "UPDATE user SET luck = ? WHERE user_id = ?"
-	err = tx.Exec(query, stock.TotalValue, user.UserId).Error
+	err = tx.Exec(query, user.Luck, user.UserId).Error
 	if err != nil {
 		log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
 		errCode = util.HttpCode{
@@ -161,6 +193,37 @@ func DoSellStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SSto
 		}
 		return
 	}
+	stockUser := &model.StockUser{}
+	query = "SELECT * FROM stock_user WHERE user_id= ? and stock_id = ?"
+	err = config.MysqlConn.Raw(query, user.UserId, stock.StockId).First(stockUser).Error
+	if stockUser == nil {
+		snowflake, _ := util.NewSnowflake(1)
+		uuid := snowflake.Generate()
+
+		sql = "insert into stock_user (`stock_user_id`, `stock_id`, `stock_name`, `stock_number`, `user_id`) values(?,?,?,?,?)"
+
+		err = tx.Exec(sql, uuid, stock.StockId, stock.StockName, stock.StockNumber, userId).Error
+		if err != nil {
+			log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+			errCode = util.HttpCode{
+				Code: constant.DatabaseError,
+				Data: struct{}{},
+			}
+			return
+		}
+	} else {
+		query := "UPDATE stock_user SET stock_number = ? WHERE user_id = ? and stock_id = ?"
+		err := tx.Exec(query, stockNumber, user.UserId, stock.StockId).Error
+		if err != nil {
+			log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+			errCode = util.HttpCode{
+				Code: constant.DatabaseError,
+				Data: struct{}{},
+			}
+			return
+		}
+	}
+
 	tx.Exec("commit")
 	errCode = util.HttpCode{
 		Code: constant.ErrSuccer,
