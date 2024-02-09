@@ -12,7 +12,7 @@ func UserRouter(r *gin.RouterGroup) {
 	r.POST("/get", service.UserGet)
 
 	admin := r.Group("admin")
-	admin.Use(middlewares.AdminCheck())
+	admin.Use(middlewares.AuthJWTAdminCheck())
 	{
 		admin.POST("/del", service.UserDel)
 		admin.POST("/register", service.UserRegister)

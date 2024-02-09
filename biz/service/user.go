@@ -67,30 +67,42 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser) (errCode util.HttpCod
 		return
 	}
 
-	key := constant.REDIS_KEY_SESSION + user.UserName
+	//key := constant.REDIS_KEY_SESSION + user.UserName
+	//
+	//val := mUser.UserId
+	//errCode = method.DoSetRedisValue(c, key, val, 5*60)
+	//if errCode.Code != constant.ERRSUCCER {
+	//	return
+	//}
 
-	val := mUser.UserId
-	errCode = method.DoSetRedisValue(c, key, val, 5*60)
-	if errCode.Code != constant.ERRSUCCER {
-		return
-	}
-
-	err := util.SetSession(c, mUser.UserName, mUser.UserId)
-	if err != nil {
-		errCode = util.HttpCode{
-			Code: constant.ERRCREATEESSION,
+	//err := util.SetSession(c, mUser.UserName, mUser.UserId)
+	//session := util.GetSession(c)
+	//if err != nil {
+	//	errCode = util.HttpCode{
+	//		Code: constant.ERRCREATEESSION,
+	//		Data: struct{}{},
+	//	}
+	//	c.JSON(http.StatusOK, errCode)
+	//	return
+	//}
+	a, r, err1 := util.Token.GetToken(mUser.UserId, mUser.UserName)
+	if err1 != nil {
+		c.JSON(http.StatusOK, util.HttpCode{
+			Code: constant.ERRUserInfoErr,
 			Data: struct{}{},
-		}
-		c.JSON(http.StatusOK, errCode)
+		})
 		return
 	}
-
 	errCode = util.HttpCode{
 		Code: constant.ERRSUCCER,
-		Data: struct{}{},
+		Data: model.Token{
+			AccessToken:  a,
+			RefreshToken: r,
+		},
 	}
 
 	c.JSON(http.StatusOK, errCode)
+
 	return
 }
 
@@ -160,7 +172,7 @@ func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.H
 		Referrer:       user.Referrer,
 	}
 
-	errCode, userNew = method.DoCreateMySQLUser(c, userNew)
+	errCode = method.DoCreateMySQLUser(c, userNew)
 	if errCode.Code != constant.ERRSUCCER {
 		return errCode
 	}
@@ -203,7 +215,7 @@ func DoUserDel(c *gin.Context, user *model.K2SDelUser) (errCode util.HttpCode) {
 		return errCode
 	}
 
-	errCode, mUser := method.DoFindMySQLUser(c, user.UserId)
+	errCode, mUser := method.GetUserById(c, user.UserId)
 	if errCode.Code != constant.ERRSUCCER {
 		return errCode
 	}

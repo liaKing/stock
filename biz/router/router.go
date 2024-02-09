@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"stock/biz/handler"
+	middlewares "stock/biz/middlerware"
 )
 
 func Router() *gin.Engine {
@@ -13,14 +14,17 @@ func Router() *gin.Engine {
 		handler.UserRouter(user)
 	}
 	stock := r.Group("stock")
+	stock.Use(middlewares.AuthJWTCheck())
 	{
 		handler.StockRouter(stock)
 	}
 	task := r.Group("task")
+	task.Use(middlewares.AuthJWTCheck())
 	{
 		handler.TaskRouter(task)
 	}
 	tradeTask := r.Group("tradeTask")
+	tradeTask.Use(middlewares.AuthJWTCheck())
 	{
 		handler.TradeTaskRouter(tradeTask)
 	}
