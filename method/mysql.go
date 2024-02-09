@@ -31,7 +31,7 @@ func DoFindMySQLUser(c *gin.Context, UserName string) (errCode util.HttpCode, us
 }
 
 // DoCreateMySQLUser 添加用户信息
-func DoCreateMySQLUser(c *gin.Context, user *model.User) (errCode util.HttpCode, userNew *model.User) {
+func DoCreateMySQLUser(c *gin.Context, user *model.User) (errCode util.HttpCode) {
 	if user == nil {
 		log.Errorf(c, "DoCreateMySQLUser 关键信息丢失")
 		errCode = util.HttpCode{
@@ -39,7 +39,7 @@ func DoCreateMySQLUser(c *gin.Context, user *model.User) (errCode util.HttpCode,
 			Data: struct{}{},
 		}
 	}
-	err := config.MysqlConn.Table("user").Create(user).Find(userNew).Error
+	err := config.MysqlConn.Table("user").Create(user).Error
 	if err != nil {
 		log.Errorf(c, "DoCreateMySQLUser 操作mysql失败")
 		errCode = util.HttpCode{

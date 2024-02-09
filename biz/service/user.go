@@ -172,7 +172,7 @@ func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.H
 		Referrer:       user.Referrer,
 	}
 
-	errCode, userNew = method.DoCreateMySQLUser(c, userNew)
+	errCode = method.DoCreateMySQLUser(c, userNew)
 	if errCode.Code != constant.ERRSUCCER {
 		return errCode
 	}
