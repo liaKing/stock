@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	//"google.golang.org/appengine/log"
 	"log"
 	"net/http"
 	"os"
@@ -17,16 +17,18 @@ import (
 func main() {
 
 	if err := util.GetDataViper(); err != nil {
-		fmt.Println("GetDataViper 读取失败", err)
+		//fmt.Println("GetDataViper 读取失败", err)
+		log.Println("getDataviper have err", err)
 		return
+
 	}
 
 	if err := config.Mysql(); err != nil {
-		fmt.Println("mysql连接失败", err)
+		log.Println("mysql have err", err)
 		return
 	}
 	if err := config.Redis(); err != nil {
-		fmt.Println("newRedis连接失败", err)
+		log.Println("redis have err", err)
 		return
 	}
 

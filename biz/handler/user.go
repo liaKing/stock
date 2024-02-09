@@ -7,6 +7,7 @@ import (
 )
 
 func UserRouter(r *gin.RouterGroup) {
+
 	r.POST("/login", service.UserLogin)
 	r.POST("/get", service.UserGet)
 
@@ -17,4 +18,5 @@ func UserRouter(r *gin.RouterGroup) {
 		admin.POST("/register", service.UserRegister)
 		admin.POST("/doluck", service.UserDoLuck)
 	}
+
 }

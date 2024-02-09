@@ -8,3 +8,11 @@ type K2SStock struct {
 	UserId      string `json:"userId" db:"user_id"`           //股票持有人
 	TotalValue  uint64 `json:"totalValue" db:"total_value"`   //总价值
 }
+
+type StockUser struct {
+	StockUserId string `json:"stockUserId" db:"stock_user_id"`
+	StockId     string `json:"stockId" db:"stock_id"`
+	StockName   string `json:"stockName" db:"stock_name"`
+	StockNumber uint64 `json:"stockNumber" db:"stock_number"`
+	UserId      string `json:"userId" db:"user_id""'`
+}
