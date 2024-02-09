@@ -9,8 +9,9 @@ const (
 
 	//关于股票是2开头Stock
 	//StockNotFind = 201
-	StockOverBuying = 202 //股票数量已不够
-
+	StockOverBuying    = 202 //股票数量已不够
+	UserStockNotFound  = 203
+	UserStockNotEnough = 204
 	//common
 	DatabaseError  = 901
 	ParameterError = 902

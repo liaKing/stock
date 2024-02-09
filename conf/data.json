@@ -1,12 +1,12 @@
 {
   "mysql": {
     "username":"root",
-    "password":"root",
-    "ip":"127.0.0.1:3306",
+    "password":"123456",
+    "ip":"47.98.124.41:3306",
     "name":"stock"
   },
   "redis": {
-    "ip": "redis_service",
+    "ip": "47.98.124.41:6379",
     "maxIdle":     3,
     "maxActive":   5
   }

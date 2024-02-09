@@ -39,7 +39,7 @@ func main() {
 	r := router.Router()
 	// 创建 HTTP 服务器
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":8889",
 		Handler: r,
 	}
 

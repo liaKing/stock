@@ -83,7 +83,7 @@ func GetStockList(c *gin.Context) {
 }
 
 func GetStockByUserId(c *gin.Context) {
-	userId := "111"
+	userId := "001"
 	errCode := method.GetStockByUserId(c, userId)
 	if errCode.Code == constant.ErrSuccer {
 		errCode = util.HttpCode{

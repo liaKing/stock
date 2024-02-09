@@ -106,8 +106,9 @@ func DoBuyStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SStoc
 
 	stockUser := &model.StockUser{}
 	query = "SELECT * FROM stock_user WHERE user_id= ? and stock_id = ?"
-	err = config.MysqlConn.Raw(query, user.UserId, stock.StockId).First(stockUser).Error
-	if stockUser == nil {
+	//err = config.MysqlConn.Raw(query, user.UserId, stock.StockId).First(stockUser).Error
+	result := config.MysqlConn.Raw(query, user.UserId, stock.StockId).Find(stockUser)
+	if result.RowsAffected == 0 {
 		snowflake, _ := util.NewSnowflake(1)
 		uuid := snowflake.Generate()
 
@@ -123,6 +124,7 @@ func DoBuyStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SStoc
 			return
 		}
 	} else {
+		stockNumber = stock.StockNumber + stockUser.StockNumber
 		query := "UPDATE stock_user SET stock_number = ? WHERE user_id = ? and stock_id = ?"
 		err := tx.Exec(query, stockNumber, user.UserId, stock.StockId).Error
 		if err != nil {
@@ -155,12 +157,38 @@ func DoSellStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SSto
 	defer rateLock.Unlock()
 	tx := config.MysqlConn.Begin()
 	//事务里的代码
-	stockNumber := existStock.StockNumber + stock.StockNumber
 
+	stockUser := &model.StockUser{}
+	query := "SELECT * FROM stock_user WHERE user_id= ? and stock_id = ?"
+	//err = config.MysqlConn.Raw(query, user.UserId, stock.StockId).First(stockUser).Error
+	err := config.MysqlConn.Raw(query, user.UserId, stock.StockId).Find(stockUser).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			errCode = util.HttpCode{
+				Code: constant.UserStockNotFound,
+				Data: struct{}{},
+			}
+			return
+		} else {
+			errCode = util.HttpCode{
+				Code: constant.DatabaseError,
+				Data: struct{}{},
+			}
+			return
+		}
+	}
+	if stockUser.StockNumber < stock.StockNumber {
+		errCode = util.HttpCode{
+			Code: constant.UserStockNotEnough,
+			Data: struct{}{},
+		}
+		return
+	}
+	stockNumber := existStock.StockNumber - stock.StockNumber
+	stock.TotalValue = stock.StockNumber * existStock.StockPrice
 	user.Luck = user.Luck + stock.TotalValue
-
-	query := "UPDATE stock SET stock_number = ? WHERE stock_id = ?"
-	err := tx.Exec(query, stockNumber, stock.StockId).Error
+	query = "UPDATE stock SET stock_number = ? WHERE stock_id = ?"
+	err = tx.Exec(query, stockNumber, stock.StockId).Error
 	if err != nil {
 		errCode = util.HttpCode{
 			Code: constant.DatabaseError,
@@ -193,35 +221,16 @@ func DoSellStock(c *gin.Context, stock *model.K2SStock, existStock *model.K2SSto
 		}
 		return
 	}
-	stockUser := &model.StockUser{}
-	query = "SELECT * FROM stock_user WHERE user_id= ? and stock_id = ?"
-	err = config.MysqlConn.Raw(query, user.UserId, stock.StockId).First(stockUser).Error
-	if stockUser == nil {
-		snowflake, _ := util.NewSnowflake(1)
-		uuid := snowflake.Generate()
-
-		sql = "insert into stock_user (`stock_user_id`, `stock_id`, `stock_name`, `stock_number`, `user_id`) values(?,?,?,?,?)"
-
-		err = tx.Exec(sql, uuid, stock.StockId, stock.StockName, stock.StockNumber, userId).Error
-		if err != nil {
-			log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
-			errCode = util.HttpCode{
-				Code: constant.DatabaseError,
-				Data: struct{}{},
-			}
-			return
+	stockNumber = stockUser.StockNumber + stock.StockNumber
+	query = "UPDATE stock_user SET stock_number = ? WHERE user_id = ? and stock_id = ?"
+	err = tx.Exec(query, stockNumber, user.UserId, stock.StockId).Error
+	if err != nil {
+		log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+		errCode = util.HttpCode{
+			Code: constant.DatabaseError,
+			Data: struct{}{},
 		}
-	} else {
-		query := "UPDATE stock_user SET stock_number = ? WHERE user_id = ? and stock_id = ?"
-		err := tx.Exec(query, stockNumber, user.UserId, stock.StockId).Error
-		if err != nil {
-			log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
-			errCode = util.HttpCode{
-				Code: constant.DatabaseError,
-				Data: struct{}{},
-			}
-			return
-		}
+		return
 	}
 
 	tx.Exec("commit")
@@ -271,10 +280,10 @@ func DoGetStockListById(c *gin.Context) (errCode util.HttpCode) {
 
 func GetStockByUserId(c *gin.Context, userId string) (errCode util.HttpCode) {
 	stock := &model.K2SStock{}
-	query := "SELECT * FROM stock WHERE user_id = ?"
+	query := "SELECT * FROM stock_user WHERE user_id = ?"
 	err := config.MysqlConn.Raw(query, userId).First(stock).Error
 	if err != nil {
-		log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
+		//log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
 		errCode = util.HttpCode{
 			Code: constant.ERRDOMYSQL,
 			Data: struct{}{},
@@ -283,7 +292,7 @@ func GetStockByUserId(c *gin.Context, userId string) (errCode util.HttpCode) {
 	}
 	errCode = util.HttpCode{
 		Code: constant.ERRSUCCER,
-		Data: struct{}{},
+		Data: stock,
 	}
 	return
 
@@ -316,14 +325,14 @@ func CommitStockAct(c *gin.Context, commit *model.K2SCommitStock) (errCode util.
 
 	tx.Exec("commit")
 	errCode = util.HttpCode{
-		Code: constant.ERRSUCCER,
+		Code: constant.ErrSuccer,
 		Data: struct{}{},
 	}
 	return
 }
 
 func addStockPrice(c *gin.Context, price uint64, tx *gorm.DB) (errCode util.HttpCode) {
-	query := "UPDATE user SET stock_price = seock_price+? WHERE user_id = ?"
+	query := "UPDATE stock SET stock_price = stock_price+? WHERE user_id = ?"
 	err := tx.Exec(query, price, "001").Error
 	if err != nil {
 		log.Errorf(c, "DoFindMySQLUser 操作mysql失败 err%d", err)
@@ -334,7 +343,7 @@ func addStockPrice(c *gin.Context, price uint64, tx *gorm.DB) (errCode util.Http
 		return
 	}
 	errCode = util.HttpCode{
-		Code: constant.ERRSUCCER,
+		Code: constant.ErrSuccer,
 		Data: struct{}{},
 	}
 	return

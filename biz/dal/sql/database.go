@@ -32,7 +32,7 @@ func Mysql() error {
 
 // Redis 连接redis
 func Redis() error {
-	ip := viper.GetString("redis.ip.json")
+	ip := viper.GetString("redis.ip")
 	maxIdle := viper.GetInt("redis.maxIdle")
 	maxActive := viper.GetInt("redis.maxActive")
 
