@@ -282,6 +282,7 @@ func DoUserGet(c *gin.Context, user *model.K2SGetUser) (errCode util.HttpCode) {
 	return
 }
 
+// UserDoLuck 添加幸运值
 func UserDoLuck(c *gin.Context) {
 	user := &model.K2SDoLuckUser{}
 	err := c.ShouldBind(&user)
@@ -303,6 +304,7 @@ func UserDoLuck(c *gin.Context) {
 	c.JSON(http.StatusOK, errCode)
 }
 
+// DoUserLuck 添加幸运值
 func DoUserLuck(c *gin.Context, user *model.K2SDoLuckUser) (errCode util.HttpCode) {
 	if user.UserId == "" || user.Luck == 0 {
 		log.Errorf(c, "DoUserLuck 关键信息丢失")

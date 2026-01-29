@@ -6,6 +6,5 @@ import (
 )
 
 func TradeTaskRouter(r *gin.RouterGroup) {
-	r.POST("/stockList", service.GetTradeTaskListByUserId)
-
+	r.POST("/stockList", service.GetTradeTaskListByUserId) // 获取交易任务列表
 }
