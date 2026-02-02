@@ -15,7 +15,8 @@ import (
 	"stock/util"
 )
 
-func DoGetStockById(c *gin.Context, id string) (errCode util.HttpCode, stock *model.K2SStock) {
+// DoGetStockById 根据股票id获取股票信息
+func GetStockById(c *gin.Context, id string) (errCode util.HttpCode, stock *model.K2SStock) {
 	stock = &model.K2SStock{}
 	query := "SELECT * FROM stock WHERE stock_id = ?"
 	err := config.MysqlConn.Raw(query, id).First(stock).Error

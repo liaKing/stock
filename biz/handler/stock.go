@@ -6,7 +6,7 @@ import (
 )
 
 func StockRouter(r *gin.RouterGroup) {
-	r.PUT("/buy", service.BuyStock)
+	r.PUT("/buy", service.BuyStock) 
 	r.PUT("/sell", service.SellStock)
 	r.GET("/stockList", service.GetStockList)
 	r.GET("/user", service.GetStockByUserId)

@@ -22,7 +22,7 @@ func BuyStock(c *gin.Context) {
 		})
 		return
 	}
-	errCode, existStock := method.DoGetStockById(c, stock.StockId)
+	errCode, existStock := method.GetStockById(c, stock.StockId)
 	if errCode.Code != constant.ErrSuccer {
 		c.JSON(http.StatusOK, util.HttpCode{
 			Code: errCode.Code,
@@ -51,7 +51,7 @@ func SellStock(c *gin.Context) {
 		})
 		return
 	}
-	errCode, existStock := method.DoGetStockById(c, stock.StockId)
+	errCode, existStock := method.GetStockById(c, stock.StockId)
 	if errCode.Code != 0 {
 		c.JSON(http.StatusOK, util.HttpCode{
 			Code: errCode.Code,

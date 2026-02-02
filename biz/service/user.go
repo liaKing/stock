@@ -304,7 +304,7 @@ func UserDoLuck(c *gin.Context) {
 	c.JSON(http.StatusOK, errCode)
 }
 
-// DoUserLuck 添加幸运值
+// DoUserLuck 增减幸运值（正数增加，负数减少）
 func DoUserLuck(c *gin.Context, user *model.K2SDoLuckUser) (errCode util.HttpCode) {
 	if user.UserId == "" || user.Luck == 0 {
 		log.Errorf(c, "DoUserLuck 关键信息丢失")
@@ -319,7 +319,17 @@ func DoUserLuck(c *gin.Context, user *model.K2SDoLuckUser) (errCode util.HttpCod
 		return errCode
 	}
 
-	mUser.Luck += user.Luck
+	// 支持增减：正数加、负数减，结果不能小于 0
+	newLuck := int64(mUser.Luck) + user.Luck
+	if newLuck < 0 {
+		log.Errorf(c, "DoUserLuck 幸运值不足，当前:%d 操作:%d", mUser.Luck, user.Luck)
+		errCode = util.HttpCode{
+			Code: constant.LackOfLuck,
+			Data: struct{}{},
+		}
+		return errCode
+	}
+	mUser.Luck = uint64(newLuck)
 
 	errCode = method.DoUpdataMySQLUserLuck(c, user.UserId, mUser.Luck)
 	if errCode.Code != constant.ERRSUCCER {

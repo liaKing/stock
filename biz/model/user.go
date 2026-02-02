@@ -49,8 +49,8 @@ type K2SGetUser struct {
 	UserId string `json:"userId"` //用户Id
 }
 
-// K2SDoLuckUser 前端到服务端的协议 修改货币
+// K2SDoLuckUser 前端到服务端的协议 修改货币（正数增加，负数减少）
 type K2SDoLuckUser struct {
 	UserId string `json:"userId"` //用户Id
-	Luck   uint64 `json:"luck" db:"luck"`
+	Luck   int64  `json:"luck" db:"luck"` // 正数=增加，负数=减少
 }
