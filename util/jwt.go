@@ -2,12 +2,14 @@ package util
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
+	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
-	AccessTokenDuration  = 2 * time.Hour
+	AccessTokenDuration  = 7 * 24 * time.Hour
 	RefreshTokenDuration = 30 * 24 * time.Hour
 	TokenIssuer          = "xinxuecheng-vote"
 )
@@ -61,8 +63,12 @@ func (j *VoteJwt) GetToken(id string, name string) (aToken, rToken string, err e
 	return
 }
 
-// VerifyToken 验证Token
+// VerifyToken 验证Token。tokenID 可为裸 token 或带 "Bearer " 前缀的 Authorization 头取值。
 func (j *VoteJwt) VerifyToken(tokenID string) (*Claim, error) {
+	tokenID = strings.TrimSpace(tokenID)
+	if strings.HasPrefix(strings.ToLower(tokenID), "bearer ") {
+		tokenID = strings.TrimSpace(tokenID[7:])
+	}
 	claim := &Claim{}
 	token, err := jwt.ParseWithClaims(tokenID, claim, j.keyFunc)
 	if err != nil {

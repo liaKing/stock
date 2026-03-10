@@ -2,32 +2,37 @@ package config
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/spf13/viper"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-var MysqlConn *gorm.DB
+var DB *gorm.DB
 var RedisConn *redis.Pool
 
-// Mysql 连接mysql
-func Mysql() error {
-
-	username := viper.GetString("mysql.username")
-	password := viper.GetString("mysql.password")
-	ip := viper.GetString("mysql.ip")
-	name := viper.GetString("mysql.name")
-
-	//parseTime=True&loc=Local MySQL 默认时间是格林尼治时间，与我们差八小时，需要定位到我们当地时间
-	my := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local", username, password, ip, name)
-	conn, err := gorm.Open(mysql.Open(my), &gorm.Config{})
-	if err != nil {
-		fmt.Printf("err:%s\n", err)
-		panic(err)
+// Pgsql 连接 PostgreSQL（读配置 pgsql.*，端口 5432）
+func Pgsql() error {
+	host := viper.GetString("pgsql.host")
+	port := viper.GetInt("pgsql.port")
+	user := viper.GetString("pgsql.user")
+	password := viper.GetString("pgsql.password")
+	dbname := viper.GetString("pgsql.dbname")
+	sslmode := viper.GetString("pgsql.sslmode")
+	if sslmode == "" {
+		sslmode = "disable"
 	}
-	MysqlConn = conn
-	return err
+	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		host, port, user, password, dbname, sslmode)
+	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Println("pgsql connect err:", err)
+		return err
+	}
+	DB = conn
+	return nil
 }
 
 // Redis 连接redis
@@ -48,8 +53,14 @@ func Redis() error {
 }
 
 func Close() {
-	get := RedisConn.Get()
-	db, _ := MysqlConn.DB()
-	_ = get.Close()
-	_ = db.Close()
+	if RedisConn != nil {
+		get := RedisConn.Get()
+		_ = get.Close()
+	}
+	if DB != nil {
+		sqlDB, _ := DB.DB()
+		if sqlDB != nil {
+			_ = sqlDB.Close()
+		}
+	}
 }

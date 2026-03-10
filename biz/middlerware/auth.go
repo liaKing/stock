@@ -1,9 +1,12 @@
 package middlewares
 
 import (
+	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"stock/constant"
 	"stock/method"
 	"stock/util"
@@ -19,14 +22,13 @@ func AuthCheck() gin.HandlerFunc {
 		// 从 Redis 中获取存储的验证码
 		key := constant.REDIS_KEY_SESSION + accountString
 		errCode, session := method.DoGetRedisValue(c, key)
-		if errCode.Code != constant.ERRSUCCER {
-			c.JSON(http.StatusOK, errCode)
+		if !errCode.IsSuccess() {
+			c.JSON(http.StatusOK, errCode.EnsureMessage())
 			return
 		}
 		val := session.(string)
-		uidString := userId.(string)
-
-		if uidString != val {
+		uidString, ok := userId.(string)
+		if !ok || uidString != val {
 			c.Redirect(http.StatusFound, "/login")
 			c.Abort() //如果用户没有登录，中间件直接返回，不再向后继续
 		}
@@ -37,15 +39,17 @@ func AuthCheck() gin.HandlerFunc {
 	}
 }
 
-// AdminCheck 检查是否是管理员
+// AdminCheck 检查是否是管理员。优先使用 Context 中的 userId（由 AuthJWTCheck 写入），否则从 Cookie Session 读取。
 func AdminCheck() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		data := util.GetSession(c)
-		userId, _ := data["userId"]
-		uidString := userId.(string)
-		if uidString != constant.AdministratorUserId {
+		var uidString string
+		if v, exists := c.Get("userId"); exists {
+			uidString, _ = v.(string)
+		}
+		if uidString == "" || uidString != constant.AdministratorUserId {
 			c.Redirect(http.StatusFound, "/login")
-			c.Abort() //如果用户没有登录，中间件直接返回，不再向后继续
+			c.Abort()
+			return
 		}
 
 		c.Next()
@@ -63,13 +67,20 @@ func AuthJWTCheck() gin.HandlerFunc {
 		fmt.Printf("auth:%+v\n", auth)
 		data, err := util.Token.VerifyToken(auth)
 		if err != nil {
+			code := constant.ERRNotLogin
+			msg := "验签失败！"
+			if errors.Is(err, jwt.ErrTokenExpired) {
+				code = constant.ERRTokenExpired
+				msg = constant.GetMessage(code)
+			}
 			c.AbortWithStatusJSON(http.StatusUnauthorized, util.HttpCode{
-				Code: constant.ERRNotLogin,
-				Data: "验签失败！",
+				Code: code,
+				Data: msg,
 			})
+			return
 		}
 		fmt.Printf("data:%+v\n", data)
-		if data.ID == "" || data.Name == "" {
+		if data == nil || data.ID == "" || data.Name == "" {
 			//如果用户没有登录，中间件直接返回，不再向后继续
 			c.AbortWithStatusJSON(http.StatusUnauthorized, util.HttpCode{
 				Code: constant.ERRNotLogin,
@@ -97,13 +108,20 @@ func AuthJWTAdminCheck() gin.HandlerFunc {
 		fmt.Printf("auth:%+v\n", auth)
 		data, err := util.Token.VerifyToken(auth)
 		if err != nil {
+			code := constant.ERRNotLogin
+			msg := "验签失败！"
+			if errors.Is(err, jwt.ErrTokenExpired) {
+				code = constant.ERRTokenExpired
+				msg = constant.GetMessage(code)
+			}
 			c.AbortWithStatusJSON(http.StatusUnauthorized, util.HttpCode{
-				Code: constant.ERRNotLogin,
-				Data: "验签失败！",
+				Code: code,
+				Data: msg,
 			})
+			return
 		}
 		fmt.Printf("data:%+v\n", data)
-		if data.ID != "001" || data.Name == "" {
+		if data == nil || data.ID != constant.AdministratorUserId || data.Name == "" {
 			//如果用户没有登录，中间件直接返回，不再向后继续
 			c.AbortWithStatusJSON(http.StatusUnauthorized, util.HttpCode{
 				Code: constant.ERRNotLogin,

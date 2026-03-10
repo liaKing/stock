@@ -6,11 +6,7 @@ import (
 )
 
 func StockRouter(r *gin.RouterGroup) {
-	r.PUT("/buy", service.BuyStock) 
-	r.PUT("/sell", service.SellStock)
-	r.GET("/stockList", service.GetStockList)
-	r.GET("/user", service.GetStockByUserId)
-	r.PUT("/stop", service.StopStockAct)
-	r.PUT("/commit", service.CommitStockAct)
-
+	r.PUT("/buy", service.BuyStock)           // 从官方购买项目股票（仅立项中可购买）
+	r.GET("/item/list", service.GetStockList)      // 获取项目列表
+	r.GET("/user", service.GetStockByUserId)  // 获取当前用户持仓列表
 }

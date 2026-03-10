@@ -3,7 +3,7 @@ package method
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
-	"google.golang.org/appengine/log"
+	"log"
 	"stock/biz/dal/sql"
 	"stock/constant"
 	"stock/util"
@@ -11,7 +11,7 @@ import (
 
 func DoGetRedisValue(c *gin.Context, key string) (errCode util.HttpCode, value interface{}) {
 	if key == "" {
-		log.Errorf(c, "DoGetRedisValue 关键信息丢失")
+		log.Printf("[ERROR] DoGetRedisValue 关键信息丢失")
 		errCode = util.HttpCode{
 			Code: constant.ERRDATALOSE,
 			Data: struct{}{},
@@ -21,7 +21,7 @@ func DoGetRedisValue(c *gin.Context, key string) (errCode util.HttpCode, value i
 
 	value, err := redis.String(config.RedisConn.Get().Do("GET", key))
 	if err != nil {
-		log.Errorf(c, "DoGetRedisValue 获取redis失败 err%d", err)
+		log.Printf("[ERROR] DoGetRedisValue 获取redis失败 err%d", err)
 		errCode = util.HttpCode{
 			Code: constant.ERRDOREDIS,
 			Data: struct{}{},
@@ -38,7 +38,7 @@ func DoGetRedisValue(c *gin.Context, key string) (errCode util.HttpCode, value i
 
 func DoDelRedisValue(c *gin.Context, key string) (errCode util.HttpCode) {
 	if key == "" {
-		log.Errorf(c, "DoGetRedisValue 关键信息丢失")
+		log.Printf("[ERROR] DoGetRedisValue 关键信息丢失")
 		errCode = util.HttpCode{
 			Code: constant.ERRDATALOSE,
 			Data: struct{}{},
@@ -48,7 +48,7 @@ func DoDelRedisValue(c *gin.Context, key string) (errCode util.HttpCode) {
 
 	_, err := redis.String(config.RedisConn.Get().Do("DEL", key))
 	if err != nil {
-		log.Errorf(c, "DoDelRedisValue 获取redis失败 err%d", err)
+		log.Printf("[ERROR] DoDelRedisValue 获取redis失败 err%d", err)
 		errCode = util.HttpCode{
 			Code: constant.ERRDOREDIS,
 			Data: struct{}{},
@@ -65,7 +65,7 @@ func DoDelRedisValue(c *gin.Context, key string) (errCode util.HttpCode) {
 
 func DoSetRedisValue(c *gin.Context, key string, value string, time int) (errCode util.HttpCode) {
 	if key == "" || value == "" {
-		log.Errorf(c, "DoGetRedisValue 关键信息丢失")
+		log.Printf("[ERROR] DoGetRedisValue 关键信息丢失")
 		errCode = util.HttpCode{
 			Code: constant.ERRDATALOSE,
 			Data: struct{}{},
@@ -76,7 +76,7 @@ func DoSetRedisValue(c *gin.Context, key string, value string, time int) (errCod
 	if time == 0 {
 		_, err := config.RedisConn.Get().Do("SET", key, value)
 		if err != nil {
-			log.Errorf(c, "DoSetRedisValue 存储redis失败 err%d", err)
+			log.Printf("[ERROR] DoSetRedisValue 存储redis失败 err%d", err)
 			errCode = util.HttpCode{
 				Code: constant.ERRDOREDIS,
 				Data: struct{}{},
@@ -86,7 +86,7 @@ func DoSetRedisValue(c *gin.Context, key string, value string, time int) (errCod
 	if time != 0 {
 		_, err := config.RedisConn.Get().Do("SETEX", key, time, value)
 		if err != nil {
-			log.Errorf(c, "DoSetRedisValue 存储redis失败 err%d", err)
+			log.Printf("[ERROR] DoSetRedisValue 存储redis失败 err%d", err)
 			errCode = util.HttpCode{
 				Code: constant.ERRDOREDIS,
 				Data: struct{}{},

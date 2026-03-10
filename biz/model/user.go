@@ -16,6 +16,40 @@ type User struct {
 	Referrer       string `json:"referrer" db:"referrer"`              //推荐人
 }
 
+// UserInfo 返回前端的用户信息（不含密码等敏感字段）
+type UserInfo struct {
+	UserId         string `json:"userId"`
+	Ctime          int64  `json:"ctime"`
+	DelFlg         int    `json:"delFlg"`
+	DeletionReason string `json:"deletionReason,omitempty"`
+	UserName       string `json:"userName"`
+	RealName       string `json:"realName"`
+	Name           string `json:"name"`
+	WeChat         string `json:"weChat,omitempty"`
+	PhoneNumber    string `json:"phoneNumber,omitempty"`
+	Address        string `json:"address,omitempty"`
+	Luck           uint64 `json:"luck"`
+	Referrer       string `json:"referrer,omitempty"`
+}
+
+// ToUserInfo 从 User 转为 UserInfo，不包含 passWord
+func (u *User) ToUserInfo() UserInfo {
+	return UserInfo{
+		UserId:         u.UserId,
+		Ctime:          u.Ctime,
+		DelFlg:         u.DelFlg,
+		DeletionReason: u.DeletionReason,
+		UserName:       u.UserName,
+		RealName:       u.RealName,
+		Name:           u.Name,
+		WeChat:         u.WeChat,
+		PhoneNumber:    u.PhoneNumber,
+		Address:        u.Address,
+		Luck:           u.Luck,
+		Referrer:       u.Referrer,
+	}
+}
+
 // K2SRegisterUser 前端到服务端的协议 注册
 type K2SRegisterUser struct {
 	UserName    string `json:"userName"`    //用户名
@@ -25,6 +59,7 @@ type K2SRegisterUser struct {
 	WeChat      string `json:"weChat"`      //微信号
 	PhoneNumber string `json:"phoneNumber"` //手机号
 	Address     string `json:"address"`     //家庭住址
+	Luck        uint64 `json:"luck"`        //幸运值
 	Referrer    string `json:"referrer"`    //推荐人
 }
 
@@ -46,7 +81,7 @@ type K2SDelUser struct {
 
 // K2SGetUser 前端到服务端的协议 获取用户信息
 type K2SGetUser struct {
-	UserId string `json:"userId"` //用户Id
+	UserId string `json:"userId" form:"userId"` //用户Id
 }
 
 // K2SDoLuckUser 前端到服务端的协议 修改货币（正数增加，负数减少）

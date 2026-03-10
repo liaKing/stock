@@ -1,13 +1,15 @@
 {
-  "mysql": {
-    "username":"root",
-    "password":"123456",
-    "ip":"47.98.124.41:3306",
-    "name":"stock"
+  "pgsql": {
+    "host": "localhost",
+    "port": 5432,
+    "user": "postgres",
+    "password": "123456",
+    "dbname": "stock_db",
+    "sslmode": "disable"
   },
   "redis": {
     "ip": "47.98.124.41:6379",
-    "maxIdle":     3,
-    "maxActive":   5
+    "maxIdle": 3,
+    "maxActive": 5
   }
 }

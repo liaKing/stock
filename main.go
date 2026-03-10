@@ -15,6 +15,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.Println("starting...")
 
 	if err := util.GetDataViper(); err != nil {
 		//fmt.Println("GetDataViper 读取失败", err)
@@ -23,14 +25,14 @@ func main() {
 
 	}
 
-	if err := config.Mysql(); err != nil {
-		log.Println("mysql have err", err)
+	if err := config.Pgsql(); err != nil {
+		log.Println("pgsql have err", err)
 		return
 	}
-	if err := config.Redis(); err != nil {
-		log.Println("redis have err", err)
-		return
-	}
+	// if err := config.Redis(); err != nil {
+	// 	log.Println("redis have err", err)
+	// 	return
+	// }
 
 	defer func() {
 		config.Close()
@@ -49,6 +51,7 @@ func main() {
 
 	// 启动 HTTP 服务器
 	go func() {
+		log.Println("HTTP server listening on :8889")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start HTTP server: %v", err)
 		}

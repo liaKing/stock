@@ -1,70 +1,55 @@
 package service
 
 import (
-	"github.com/gin-gonic/gin"
-	"google.golang.org/appengine/log"
+	"log"
 	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
 	"stock/biz/model"
 	"stock/constant"
 	"stock/method"
 	"stock/util"
-	"strconv"
-	"time"
 )
 
 func UserLogin(c *gin.Context) {
 	user := &model.K2SLoginUser{}
 	err := c.ShouldBind(&user)
 	if err != nil {
-		log.Errorf(c, "UserLogin ShouldBind解析出错 err%d", err)
-		c.JSON(http.StatusOK, util.HttpCode{
-			Code: constant.ERRSHOULDBIND,
-			Data: struct{}{},
-		})
+		log.Printf("[ERROR] UserLogin ShouldBind解析出错 err%v", err)
+		c.JSON(http.StatusOK, util.Fail(constant.ERRSHOULDBIND))
 		return
 	}
 
 	errCode := DoUserLogin(c, user)
-	if errCode.Code != constant.ERRSUCCER {
-		c.JSON(http.StatusOK, errCode)
+	if !errCode.IsSuccess() {
+		c.JSON(http.StatusOK, errCode.EnsureMessage())
 		return
 	}
-
-	c.JSON(http.StatusOK, errCode)
+	c.JSON(http.StatusOK, errCode.EnsureMessage())
 }
 
 func DoUserLogin(c *gin.Context, user *model.K2SLoginUser) (errCode util.HttpCode) {
 	if user.UserName == "" || user.PassWord == "" {
-		log.Errorf(c, "DoUserLogin 关键信息丢失")
-		errCode = util.HttpCode{
-			Code: constant.ERRDATALOSE,
-			Data: struct{}{},
-		}
-		return
+		log.Printf("[ERROR] DoUserLogin 关键信息丢失")
+		return util.Fail(constant.ERRDATALOSE)
 	}
 
 	errCode, mUser := method.DoFindMySQLUser(c, user.UserName)
-	if errCode.Code != constant.ERRSUCCER {
-		return
+	if !errCode.IsSuccess() {
+		return errCode
 	}
 	hashPassword := util.HashPassword(user.PassWord)
 
 	if mUser.DelFlg != 0 {
-		log.Errorf(c, "DoUserLogin 用户已经注销")
-		errCode = util.HttpCode{
-			Code: constant.ERRSIGNOUT,
-			Data: struct{}{},
-		}
-		return
+		log.Printf("[ERROR] DoUserLogin 用户已经注销")
+		return util.Fail(constant.ERRSIGNOUT)
 	}
 
 	if hashPassword != mUser.PassWord {
-		log.Errorf(c, "DoUserLogin 密码不正确")
-		errCode = util.HttpCode{
-			Code: constant.ERRPSWNOTCORRECT,
-			Data: struct{}{},
-		}
-		return
+		log.Printf("[ERROR] DoUserLogin 密码不正确")
+		return util.Fail(constant.ERRPSWNOTCORRECT)
 	}
 
 	//key := constant.REDIS_KEY_SESSION + user.UserName
@@ -87,68 +72,45 @@ func DoUserLogin(c *gin.Context, user *model.K2SLoginUser) (errCode util.HttpCod
 	//}
 	a, r, err1 := util.Token.GetToken(mUser.UserId, mUser.UserName)
 	if err1 != nil {
-		c.JSON(http.StatusOK, util.HttpCode{
-			Code: constant.ERRUserInfoErr,
-			Data: struct{}{},
-		})
-		return
+		return util.Fail(constant.ERRUserInfoErr)
 	}
-	errCode = util.HttpCode{
-		Code: constant.ERRSUCCER,
-		Data: model.Token{
-			AccessToken:  a,
-			RefreshToken: r,
-		},
-	}
-
-	c.JSON(http.StatusOK, errCode)
-
-	return
+	return util.Success(model.Token{
+		AccessToken:  a,
+		RefreshToken: r,
+	})
 }
 
 func UserRegister(c *gin.Context) {
 	user := &model.K2SRegisterUser{}
 	err := c.ShouldBind(&user)
 	if err != nil {
-		log.Errorf(c, "UserRegister ShouldBind解析出错 err%d", err)
-		c.JSON(http.StatusOK, util.HttpCode{
-			Code: constant.ERRSHOULDBIND,
-			Data: struct{}{},
-		})
+		log.Printf("[ERROR] UserRegister ShouldBind解析出错 err%v", err)
+		c.JSON(http.StatusOK, util.Fail(constant.ERRSHOULDBIND))
 		return
 	}
 
 	errCode := DoUserRegister(c, user)
-	if errCode.Code != constant.ERRSUCCER {
-		c.JSON(http.StatusOK, errCode)
+	if !errCode.IsSuccess() {
+		c.JSON(http.StatusOK, errCode.EnsureMessage())
 		return
 	}
-
-	c.JSON(http.StatusOK, errCode)
+	c.JSON(http.StatusOK, errCode.EnsureMessage())
 }
 
 func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.HttpCode) {
 	if user.UserName == "" || user.PassWord == "" || user.RealName == "" {
-		log.Errorf(c, "DoUserRegister 关键信息丢失")
-		errCode = util.HttpCode{
-			Code: constant.ERRDATALOSE,
-			Data: struct{}{},
-		}
-		return errCode
+		log.Printf("[ERROR] DoUserRegister 关键信息丢失")
+		return util.Fail(constant.ERRDATALOSE)
 	}
 
 	errCode, mUser := method.DoFindMySQLUser(c, user.UserName)
-	if errCode.Code != constant.ERRSUCCER {
+	if !errCode.IsSuccess() {
 		return errCode
 	}
 
 	if mUser.UserName != "" {
-		log.Errorf(c, "DoUserRegister 账号重复")
-		errCode = util.HttpCode{
-			Code: constant.ERRACCREPEAT,
-			Data: struct{}{},
-		}
-		return errCode
+		log.Printf("[ERROR] DoUserRegister 账号重复")
+		return util.Fail(constant.ERRACCREPEAT)
 	}
 
 	user.PassWord = util.HashPassword(user.PassWord)
@@ -168,118 +130,84 @@ func DoUserRegister(c *gin.Context, user *model.K2SRegisterUser) (errCode util.H
 		WeChat:         user.WeChat,
 		PhoneNumber:    user.PhoneNumber,
 		Address:        user.Address,
-		Luck:           0,
+		Luck:           user.Luck,
 		Referrer:       user.Referrer,
 	}
 
 	errCode = method.DoCreateMySQLUser(c, userNew)
-	if errCode.Code != constant.ERRSUCCER {
+	if !errCode.IsSuccess() {
 		return errCode
 	}
-
-	errCode = util.HttpCode{
-		Code: constant.ERRSUCCER,
-		Data: struct{}{},
-	}
-	return errCode
+	return util.Success(nil)
 }
 
 func UserDel(c *gin.Context) {
 	user := &model.K2SDelUser{}
 	err := c.ShouldBind(&user)
 	if err != nil {
-		log.Errorf(c, "UserDel ShouldBind解析出错 err%d", err)
-		c.JSON(http.StatusOK, util.HttpCode{
-			Code: constant.ERRSHOULDBIND,
-			Data: struct{}{},
-		})
+		log.Printf("[ERROR] UserDel ShouldBind解析出错 err%v", err)
+		c.JSON(http.StatusOK, util.Fail(constant.ERRSHOULDBIND))
 		return
 	}
 
 	errCode := DoUserDel(c, user)
-	if errCode.Code != constant.ERRSUCCER {
-		c.JSON(http.StatusOK, errCode)
+	if !errCode.IsSuccess() {
+		c.JSON(http.StatusOK, errCode.EnsureMessage())
 		return
 	}
-
-	c.JSON(http.StatusOK, errCode)
+	c.JSON(http.StatusOK, errCode.EnsureMessage())
 }
 
 func DoUserDel(c *gin.Context, user *model.K2SDelUser) (errCode util.HttpCode) {
 	if user.UserId == "" {
-		log.Errorf(c, "DoUserDel 关键信息丢失")
-		errCode = util.HttpCode{
-			Code: constant.ERRDATALOSE,
-			Data: struct{}{},
-		}
-		return errCode
+		log.Printf("[ERROR] DoUserDel 关键信息丢失")
+		return util.Fail(constant.ERRDATALOSE)
 	}
 
 	errCode, mUser := method.GetUserById(c, user.UserId)
-	if errCode.Code != constant.ERRSUCCER {
+	if !errCode.IsSuccess() {
 		return errCode
 	}
 
 	if mUser.UserName == "" {
-		log.Errorf(c, "DoUserDel 用户不存在")
-		errCode = util.HttpCode{
-			Code: constant.ERRISNOTEXIT,
-			Data: struct{}{},
-		}
-		return errCode
+		log.Printf("[ERROR] DoUserDel 用户不存在")
+		return util.Fail(constant.ERRISNOTEXIT)
 	}
 
 	errCode = method.DoUpdataMySQLUser(c, user.UserId, user.DeletionReason)
-	if errCode.Code != constant.ERRSUCCER {
+	if !errCode.IsSuccess() {
 		return errCode
 	}
-
-	errCode = util.HttpCode{
-		Code: constant.ERRSUCCER,
-		Data: struct{}{},
-	}
-	return errCode
+	return util.Success(nil)
 }
 
 func UserGet(c *gin.Context) {
 	user := &model.K2SGetUser{}
-	err := c.ShouldBind(&user)
+	err := c.ShouldBindQuery(&user)
 	if err != nil {
-		log.Errorf(c, "UserDel ShouldBind解析出错 err%d", err)
-		c.JSON(http.StatusOK, util.HttpCode{
-			Code: constant.ERRSHOULDBIND,
-			Data: struct{}{},
-		})
+		log.Printf("[ERROR] UserGet ShouldBind解析出错 err%v", err)
+		c.JSON(http.StatusOK, util.Fail(constant.ERRSHOULDBIND))
 		return
 	}
 
 	errCode := DoUserGet(c, user)
-	if errCode.Code != constant.ERRSUCCER {
-		c.JSON(http.StatusOK, errCode)
+	if !errCode.IsSuccess() {
+		c.JSON(http.StatusOK, errCode.EnsureMessage())
 		return
 	}
-
-	c.JSON(http.StatusOK, errCode)
+	c.JSON(http.StatusOK, errCode.EnsureMessage())
 }
 
 func DoUserGet(c *gin.Context, user *model.K2SGetUser) (errCode util.HttpCode) {
 	if user.UserId == "" {
-		log.Errorf(c, "DoUserDel 关键信息丢失")
-		errCode = util.HttpCode{
-			Code: constant.ERRDATALOSE,
-			Data: struct{}{},
-		}
-		return errCode
+		log.Printf("[ERROR] DoUserGet 关键信息丢失")
+		return util.Fail(constant.ERRDATALOSE)
 	}
 	errCode, mUser := method.GetUserById(c, user.UserId)
-	if errCode.Code != constant.ERRSUCCER {
+	if !errCode.IsSuccess() {
 		return errCode
 	}
-	errCode = util.HttpCode{
-		Code: constant.ERRSUCCER,
-		Data: mUser,
-	}
-	return
+	return util.Success(mUser.ToUserInfo())
 }
 
 // UserDoLuck 添加幸运值
@@ -287,58 +215,41 @@ func UserDoLuck(c *gin.Context) {
 	user := &model.K2SDoLuckUser{}
 	err := c.ShouldBind(&user)
 	if err != nil {
-		log.Errorf(c, "UserDel ShouldBind解析出错 err%d", err)
-		c.JSON(http.StatusOK, util.HttpCode{
-			Code: constant.ERRSHOULDBIND,
-			Data: struct{}{},
-		})
+		log.Printf("[ERROR] UserDoLuck ShouldBind解析出错 err%v", err)
+		c.JSON(http.StatusOK, util.Fail(constant.ERRSHOULDBIND))
 		return
 	}
 
 	errCode := DoUserLuck(c, user)
-	if errCode.Code != constant.ERRSUCCER {
-		c.JSON(http.StatusOK, errCode)
+	if !errCode.IsSuccess() {
+		c.JSON(http.StatusOK, errCode.EnsureMessage())
 		return
 	}
-
-	c.JSON(http.StatusOK, errCode)
+	c.JSON(http.StatusOK, errCode.EnsureMessage())
 }
 
 // DoUserLuck 增减幸运值（正数增加，负数减少）
 func DoUserLuck(c *gin.Context, user *model.K2SDoLuckUser) (errCode util.HttpCode) {
 	if user.UserId == "" || user.Luck == 0 {
-		log.Errorf(c, "DoUserLuck 关键信息丢失")
-		errCode = util.HttpCode{
-			Code: constant.ERRDATALOSE,
-			Data: struct{}{},
-		}
-		return errCode
+		log.Printf("[ERROR] DoUserLuck 关键信息丢失")
+		return util.Fail(constant.ERRDATALOSE)
 	}
 	errCode, mUser := method.GetUserById(c, user.UserId)
-	if errCode.Code != constant.ERRSUCCER {
+	if !errCode.IsSuccess() {
 		return errCode
 	}
 
 	// 支持增减：正数加、负数减，结果不能小于 0
 	newLuck := int64(mUser.Luck) + user.Luck
 	if newLuck < 0 {
-		log.Errorf(c, "DoUserLuck 幸运值不足，当前:%d 操作:%d", mUser.Luck, user.Luck)
-		errCode = util.HttpCode{
-			Code: constant.LackOfLuck,
-			Data: struct{}{},
-		}
-		return errCode
+		log.Printf("[ERROR] DoUserLuck 幸运值不足，当前:%d 操作:%d", mUser.Luck, user.Luck)
+		return util.Fail(constant.LackOfLuck)
 	}
 	mUser.Luck = uint64(newLuck)
 
 	errCode = method.DoUpdataMySQLUserLuck(c, user.UserId, mUser.Luck)
-	if errCode.Code != constant.ERRSUCCER {
+	if !errCode.IsSuccess() {
 		return errCode
 	}
-
-	errCode = util.HttpCode{
-		Code: constant.ERRSUCCER,
-		Data: mUser,
-	}
-	return
+	return util.Success(mUser.ToUserInfo())
 }
