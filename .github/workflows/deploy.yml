@@ -25,7 +25,13 @@ jobs:
               git init
               git remote add origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
               git fetch origin main
+              # 备份不受 git 管理的本地文件，避免 checkout 冲突
+              [ -f conf/data.json ] && cp conf/data.json /tmp/data.json.bak
+              [ -f stock.log ] && cp stock.log /tmp/stock.log.bak
               git checkout -b main origin/main
+              # 恢复备份文件
+              [ -f /tmp/data.json.bak ] && cp /tmp/data.json.bak conf/data.json
+              [ -f /tmp/stock.log.bak ] && cp /tmp/stock.log.bak stock.log
             else
               git pull origin main
             fi
