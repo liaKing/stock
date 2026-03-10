@@ -20,11 +20,16 @@ jobs:
             set -e
             cd /opt/stock
 
-            # 备份并删除本地不受 git 管理的文件，避免 git 冲突
+            # 【注意】conf/data.json 和 stock.log 不在 git 中（已加入 .gitignore），
+            # 但它们物理上存在于 /opt/stock/，git pull/checkout 时会报错：
+            # "untracked working tree files would be overwritten by merge"
+            # 解决方案：操作前先备份并删除，操作后恢复。
             [ -f conf/data.json ] && cp conf/data.json /tmp/data.json.bak && rm -f conf/data.json
             [ -f stock.log ] && cp stock.log /tmp/stock.log.bak && rm -f stock.log
 
-            # 拉取最新代码
+            # 【注意】不能用 git clone 克隆到非空目录，否则报错：
+            # "destination path '.' already exists and is not an empty directory"
+            # 解决方案：改用 git init + remote add + fetch + checkout 的方式初始化。
             if [ ! -d ".git" ]; then
               git init
               git remote add origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
@@ -34,23 +39,29 @@ jobs:
               git pull origin main
             fi
 
-            # 恢复备份文件
+            # 恢复备份的本地配置文件和日志
             [ -f /tmp/data.json.bak ] && cp /tmp/data.json.bak conf/data.json
             [ -f /tmp/stock.log.bak ] && cp /tmp/stock.log.bak stock.log
 
-            # 配置 Go 环境变量
+            # 【注意】GitHub Actions 通过 SSH 登录时是非交互式 session，
+            # /etc/profile 中配置的环境变量不会自动生效，导致报错：
+            # "Go not found, please install Go on the server"
+            # 解决方案：在脚本中手动 export Go 路径。
             export PATH=$PATH:/usr/local/go/bin
 
-            # 安装 Go（如果没有）
             if ! command -v go &> /dev/null; then
               echo "Go not found, please install Go on the server"
               exit 1
             fi
 
-            # 编译
+            # 【注意】第一次编译时 go build 会从远程下载所有依赖，
+            # 默认走 proxy.golang.org（境外），国内服务器下载很慢。
+            # 解决方案：提前在服务器执行以下命令配置国内代理：
+            #   go env -w GOPROXY=https://goproxy.cn,direct
+            # 依赖下载后会缓存在服务器，后续部署不会重复下载。
             go build -o stock-server ./main.go
 
-            # 停止旧进程
+            # 停止旧进程（优雅退出，等待 2 秒）
             if [ -f stock.pid ]; then
               OLD_PID=$(cat stock.pid)
               if kill -0 "$OLD_PID" 2>/dev/null; then
@@ -60,10 +71,11 @@ jobs:
               rm -f stock.pid
             fi
 
-            # 启动新进程
+            # 启动新进程，日志输出到 stock.log，PID 记录到 stock.pid
             nohup ./stock-server > stock.log 2>&1 &
             echo $! > stock.pid
 
+            # 等待 2 秒后验证进程是否存活
             sleep 2
             if kill -0 "$(cat stock.pid)" 2>/dev/null; then
               echo "✅ Service started successfully (PID: $(cat stock.pid))"
