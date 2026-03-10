@@ -20,9 +20,9 @@ jobs:
             set -e
             cd /opt/stock
 
-            # 备份本地不受 git 管理的文件
-            [ -f conf/data.json ] && cp conf/data.json /tmp/data.json.bak
-            [ -f stock.log ] && cp stock.log /tmp/stock.log.bak
+            # 备份并删除本地不受 git 管理的文件，避免 git 冲突
+            [ -f conf/data.json ] && cp conf/data.json /tmp/data.json.bak && rm -f conf/data.json
+            [ -f stock.log ] && cp stock.log /tmp/stock.log.bak && rm -f stock.log
 
             # 拉取最新代码
             if [ ! -d ".git" ]; then
