@@ -10,19 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Build binary
-        run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o stock-server ./main.go
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -30,25 +17,24 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            mkdir -p /opt/stock
-
-      - name: Upload binary to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "stock-server"
-          target: "/opt/stock/"
-
-      - name: Restart service
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+            set -e
             cd /opt/stock
+
+            # 拉取最新代码
+            if [ ! -d ".git" ]; then
+              git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git .
+            else
+              git pull origin main
+            fi
+
+            # 安装 Go（如果没有）
+            if ! command -v go &> /dev/null; then
+              echo "Go not found, please install Go on the server"
+              exit 1
+            fi
+
+            # 编译
+            go build -o stock-server ./main.go
 
             # 停止旧进程
             if [ -f stock.pid ]; then
@@ -60,8 +46,7 @@ jobs:
               rm -f stock.pid
             fi
 
-            # 赋予执行权限并启动新进程
-            chmod +x stock-server
+            # 启动新进程
             nohup ./stock-server > stock.log 2>&1 &
             echo $! > stock.pid
 

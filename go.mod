@@ -1,6 +1,6 @@
 module stock
 
-go 1.25.5
+go 1.26.1
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0
