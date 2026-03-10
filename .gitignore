@@ -19,3 +19,12 @@
 
 # Go workspace file
 go.work
+
+# Config file with sensitive information
+conf/data.json
+
+# Debug binary
+__debug_bin*
+
+# Log file
+*.log
