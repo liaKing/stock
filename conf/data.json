@@ -1,9 +1,9 @@
 {
   "pgsql": {
-    "host": "175.178.83.155",
+    "host": "localhost",
     "port": 5432,
     "user": "postgres",
-    "password": "StrongPassw0rd!",
+    "password": "123456",
     "dbname": "stock_db",
     "sslmode": "disable"
   },
